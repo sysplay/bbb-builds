@@ -1,0 +1,41 @@
+#!/bin/bash
+
+cd `dirname $0`
+
+CONFIG=../.config.sh
+DOWNLOADS=../Downloads
+
+if [ ! -f ${CONFIG} ]
+then
+	echo 'Run "make build_config" in the top folder' before running this script
+	exit 1
+fi
+
+. ${CONFIG}
+
+if [ "`uname -m | grep 64`" != "" ]
+then
+	ARCH=x86_64
+else
+	ARCH=i686
+fi
+
+TOOLCHAIN=gcc-linaro-${TOOLCHAIN_VERSION}-${ARCH}_arm-linux-gnueabihf
+
+# Download the toolchain
+wget -c -P ${DOWNLOADS} ${TOOLCHAIN_PATH}/${TOOLCHAIN}.tar.xz
+
+# Install the toolchain at /opt
+echo -n "Installing toolchain. Please wait ... "
+sudo tar -xf ${DOWNLOADS}/${TOOLCHAIN}.tar.xz -C /opt
+echo "done"
+
+# Setup up automatic cross toolchain PATH setup
+cat > arm_toolchain.sh << CONTENT
+# Setting up the path for ARM's cross toolchain
+export PATH=\${PATH}:/opt/${TOOLCHAIN}/bin
+CONTENT
+sudo cp arm_toolchain.sh /etc/profile.d
+echo
+echo "*** Now, please logout and login back for the toolchain path to get set ***"
+echo

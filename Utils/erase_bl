@@ -1,0 +1,28 @@
+#!/bin/bash
+
+BKUP_DIR=/opt/SysPlay
+
+if [ ! -f ${BKUP_DIR}/MLO ] || [ ! -f ${BKUP_DIR}/u-boot.img ]
+then
+	echo "No backup to restore. Run 'backup_bl' to take a backup first."
+	exit 1
+fi
+
+if (mountpoint -q /boot/uboot)
+then
+	cd /boot/uboot
+	rm -f MLO u-boot.img
+else
+	eMMC=/dev/$(ls /sys/bus/mmc/devices/mmc1*/block)
+
+	dd if=/dev/zero of=${eMMC} bs=512 seek=1 count=2047 conv=notrunc 2> /dev/null
+fi
+sync
+
+if [ "$1" != "-q" ]
+then
+	echo "Erasing bootloader(s) successful."
+	echo
+	echo "*** Now, do a 'poweroff'. Then, remove the uSD (if inserted) and do a cold reboot. ***"
+	echo
+fi

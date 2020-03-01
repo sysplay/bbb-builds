@@ -1,0 +1,87 @@
+#!/bin/bash
+
+if [ $# -eq 2 ] && [ "$1" = "-d" ]
+then
+	DUMP=1
+	USDDEV="$2"
+elif [ $# -eq 1 ]
+then
+	DUMP=0
+	USDDEV="$1"
+else
+	echo "Usage: $0 [ -d ] <usd_device_file>"
+	exit 1
+fi
+
+if [ ! -b ${USDDEV} ]
+then
+	echo "Invalid uSD block device file ${USDDEV}"
+	exit 2
+fi
+
+if [ `id -u` != 0 ]
+then
+	echo "You need root privileges to run this script"
+	exit 3
+fi
+
+MNT=/mnt
+if (! mount ${USDDEV} ${MNT} 2> /dev/null)
+then
+	echo "Invalid uSD device file ${USDDEV} or already mounted"
+	exit 4
+fi
+
+cd `dirname $0`
+
+if [ ! -d ../Images ]
+then
+	echo "`basename $0` is placed out of tree"
+	umount ${MNT}
+	exit 5
+fi
+
+IMAGES="MLO u-boot.img uEnv.txt zImage am335x-boneblack.dtb"
+
+cd ../Images
+if (! cp -a ${IMAGES} ${MNT} 2> /dev/null)
+then
+	echo "Missing images to prepare the uSD"
+	cd ${MNT}
+	rm -f ${IMAGES}
+	cd - > /dev/null
+	umount ${MNT}
+	exit 6
+fi
+cd - > /dev/null
+
+SCRIPTS="setup backup_bl erase_bl restore_bl"
+
+mkdir -p ${MNT}/Scripts
+if (! cp -a ${SCRIPTS} ${MNT}/Scripts 2> /dev/null)
+then
+	echo "Missing scripts to prepare the uSD"
+	cd ${MNT}/Scripts
+	rm -f ${SCRIPTS}
+	cd - > /dev/null
+	rmdir ${MNT}/Scripts
+	cd ${MNT}
+	rm -f ${IMAGES}
+	cd - > /dev/null
+	umount ${MNT}
+	exit 7
+fi
+
+if [ ${DUMP} -eq 0 ]
+then
+	umount ${MNT}
+	echo "uSD prepared successfully"
+else
+	rm ${MNT}/MLO # Remove it to stop interfering
+	umount ${MNT}
+	cd ../Images
+	dd if=MLO of=${USDDEV} bs=512 seek=256 count=256 conv=notrunc 2> /dev/null
+	dd if=u-boot.img of=${USDDEV} bs=512 seek=768 count=1024 conv=notrunc 2> /dev/null
+	cd - > /dev/null
+	echo "uSD w/ raw dump prepared successfully"
+fi

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Install additonal libraries
+if [ `lsb_release -si` == "Ubuntu" ]
+then
+	sudo apt-get install lzop libncurses5-dev
+else # Assuming CentOS
+	sudo yum install lzop ncurses-devel
+fi

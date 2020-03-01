@@ -1,0 +1,33 @@
+#!/bin/bash
+
+cd `dirname $0`
+
+BKUP_DIR=/opt/SysPlay
+USDDEV=`ls /sys/bus/mmc/devices/mmc0*/block 2> /dev/null`
+
+if [ "${USDDEV}" = "" ] # uSD not even plugged, so this script obviously not running from uSD
+then
+	echo "This script should be run only from a uSD"
+	exit 1
+fi
+if [ "$(df -h $0 | tail -1 | awk '{print $1}' | cut -d/ -f3 | cut -dp -f1)" != "${USDDEV}" ]
+then
+	echo "This script should be run only from a uSD"
+	exit 1
+fi
+
+mkdir -p ${BKUP_DIR}
+
+SCRIPTS="backup_bl erase_bl restore_bl"
+
+if (! cp -a ${SCRIPTS} ${BKUP_DIR} 2> /dev/null)
+then
+	echo "Missing scripts to complete the setup"
+	rmdir -p ${BKUP_DIR}
+	exit 2
+fi
+
+cd ${BKUP_DIR}
+
+./backup_bl
+./erase_bl

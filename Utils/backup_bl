@@ -1,0 +1,25 @@
+#!/bin/bash
+
+BKUP_DIR=/opt/SysPlay
+
+if [ -f ${BKUP_DIR}/MLO ] && [ -f ${BKUP_DIR}/u-boot.img ]
+then
+	echo "Backup already done."
+	exit 0
+fi
+
+if (mountpoint -q /boot/uboot)
+then
+	cd /boot/uboot
+else
+	cd /opt/backup/uboot
+fi
+
+mkdir -p ${BKUP_DIR}
+if (cp -a MLO u-boot.img ${BKUP_DIR} 2> /dev/null)
+then
+	sync
+	echo "Backup successful."
+else
+	echo "Backup failed."
+fi
