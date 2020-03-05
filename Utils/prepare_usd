@@ -44,7 +44,7 @@ fi
 IMAGES="MLO u-boot.img uEnv.txt zImage am335x-boneblack.dtb"
 
 cd ../Images
-if (! cp -a ${IMAGES} ${MNT} 2> /dev/null)
+if (! cp ${IMAGES} ${MNT} 2> /dev/null)
 then
 	echo "Missing images to prepare the uSD"
 	cd ${MNT}
@@ -58,7 +58,7 @@ cd - > /dev/null
 SCRIPTS="setup backup_bl erase_bl restore_bl"
 
 mkdir -p ${MNT}/Scripts
-if (! cp -a ${SCRIPTS} ${MNT}/Scripts 2> /dev/null)
+if (! cp ${SCRIPTS} ${MNT}/Scripts 2> /dev/null)
 then
 	echo "Missing scripts to prepare the uSD"
 	cd ${MNT}/Scripts
