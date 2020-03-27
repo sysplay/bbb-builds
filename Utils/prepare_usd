@@ -12,6 +12,7 @@ else
 	echo "Usage: $0 [ -d ] <usd_device_file>"
 	exit 1
 fi
+USDPARTDEV=${USDDEV}p1
 
 if [ ! -b ${USDDEV} ]
 then
@@ -19,17 +20,46 @@ then
 	exit 2
 fi
 
-if [ `id -u` != 0 ]
+if [ ! -b ${USDPARTDEV} ]
 then
-	echo "You need root privileges to run this script"
+	echo "uSD not having the first partition ${USDPARTDEV}. Create it."
 	exit 3
 fi
 
-MNT=/mnt
-if (! mount ${USDDEV} ${MNT} 2> /dev/null)
+if [ `id -u` != 0 ]
 then
-	echo "Invalid uSD device file ${USDDEV} or already mounted"
+	echo "You need root privileges to run this script"
 	exit 4
+fi
+
+echo -n "You are going to lose your data in the uSD (${USDDEV}). Continue? [y|N]: "
+read resp
+if [ "${resp}" != "y" ]
+then
+	echo "Aborting ... done."
+	exit 5
+fi
+
+if (grep ${USDPARTDEV} /proc/self/mounts > /dev/null)
+then
+	if (! umount ${USDPARTDEV} 2> /dev/null)
+	then
+		echo "Unable to unmount uSD device file ${USDPARTDEV}"
+		exit 6
+	fi
+fi
+
+if (! mkfs.vfat -n BBBREC ${USDPARTDEV} 2> /dev/null >&2)
+then
+	echo "Unable to create FAT32 file system on the uSD"
+	exit 7
+fi
+
+MNT=/mnt
+if (! mount ${USDPARTDEV} ${MNT} 2> /dev/null)
+then
+	echo "Invalid uSD device file ${USDPARTDEV} or already mounted"
+	exit 8
 fi
 
 cd `dirname $0`
@@ -38,7 +68,7 @@ if [ ! -d ../Images ]
 then
 	echo "`basename $0` is placed out of tree"
 	umount ${MNT}
-	exit 5
+	exit 9
 fi
 
 IMAGES="MLO u-boot.img uEnv.txt zImage am335x-boneblack.dtb"
@@ -51,7 +81,7 @@ then
 	rm -f ${IMAGES}
 	cd - > /dev/null
 	umount ${MNT}
-	exit 6
+	exit 10
 fi
 cd - > /dev/null
 
@@ -69,7 +99,7 @@ then
 	rm -f ${IMAGES}
 	cd - > /dev/null
 	umount ${MNT}
-	exit 7
+	exit 11
 fi
 
 if [ ${DUMP} -eq 0 ]

@@ -19,3 +19,6 @@ $ make install_toolchain
 
 + Install Dependent Libraries (Optional)
 $ make install_libs
+
++ Install Build Essentials (Optional)
+$ make install_pkgs

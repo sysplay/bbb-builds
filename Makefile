@@ -10,6 +10,9 @@ install_toolchain: build_config
 install_libs:
 	Toolchain/install_libs
 
+install_pkgs:
+	Toolchain/install_pkgs
+
 build_config: ${CONFIG_SCRIPT}
 	$(shell chmod a+x $<)
 
