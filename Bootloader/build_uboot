@@ -1,0 +1,31 @@
+#!/bin/bash -e
+
+cd `dirname ${BASH_SOURCE}`
+
+. ../check_setup
+
+if [ ! -d u-boot ]
+then
+	# Download the u-boot source
+	git clone https://github.com/u-boot/u-boot
+	cd u-boot
+	git checkout v${UBOOT_VERSION} -b tmp
+
+	# Patch the u-boot source
+	UBOOT_PATCH_LOCATION=https://github.com/eewiki/u-boot-patches/raw/master/v${UBOOT_VERSION}
+	wget -c -P ${DOWNLOADS} ${UBOOT_PATCH_LOCATION}/0001-am335x_evm-uEnv.txt-bootz-n-fixes.patch
+	wget -c -P ${DOWNLOADS} ${UBOOT_PATCH_LOCATION}/0002-U-Boot-BeagleBone-Cape-Manager.patch
+	patch -p1 < ${DOWNLOADS}/0001-am335x_evm-uEnv.txt-bootz-n-fixes.patch
+	patch -p1 < ${DOWNLOADS}/0002-U-Boot-BeagleBone-Cape-Manager.patch
+else
+	cd u-boot
+fi
+
+# Configure the u-boot source
+make ${UBOOT_DEFCONFIG}
+
+# Build the u-boot source
+CROSS_COMPILE=${CROSS_COMPILE} make
+
+# Copy the spl & u-boot images
+cp spl/u-boot-spl.bin MLO u-boot.bin u-boot.img ${IMAGES}

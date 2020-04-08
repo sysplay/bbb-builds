@@ -1,0 +1,26 @@
+#!/bin/bash -e
+
+cd `dirname ${BASH_SOURCE}`
+
+. ../check_setup
+
+LINUX_CONFIG_DIR=`pwd`/Configs
+
+if [ ! -d linux-${LINUX_VERSION} ]
+then
+	# Download the linux source
+	wget -c -P ${DOWNLOADS} ${LINUX_URL}/linux-${LINUX_VERSION}.tar.xz
+	tar -xf ${DOWNLOADS}/linux-${LINUX_VERSION}.tar.xz
+fi
+
+cd linux-${LINUX_VERSION}
+
+# Configure the linux source
+cp ${LINUX_CONFIG_DIR}/config.${LINUX_VERSION}.default .config
+ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} make oldconfig
+
+# Build the linux source
+ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} make
+
+# Copy the dtb & linux images
+cp arch/arm/boot/dts/am335x-boneblack.dtb arch/arm/boot/zImage ${IMAGES}

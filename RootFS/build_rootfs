@@ -1,0 +1,79 @@
+#!/bin/bash -e
+
+cd `dirname ${BASH_SOURCE}`
+
+. ../check_setup
+
+TARGET_ROOT_DIR=`pwd`/TargetRoot
+ROOT_TEMPLATE=`pwd`/root_template.txz
+#ROOT_TEMPLATE_DIR=`pwd`/RootTemplate
+CROSS_LIBS_PATH=`dirname $(which ${CROSS_COMPILE}gcc)`/../arm-linux-gnueabihf/libc/lib
+BUSYBOX_CONFIG_DIR=`pwd`/Configs
+
+## Install minimal rootfs template
+sudo rm -fr ${TARGET_ROOT_DIR}
+mkdir ${TARGET_ROOT_DIR}
+tar xf ${ROOT_TEMPLATE} -C ${TARGET_ROOT_DIR}
+#mkdir ${ROOT_TEMPLATE_DIR}
+#tar xf ${ROOT_TEMPLATE} -C ${ROOT_TEMPLATE_DIR}
+#tar cf - -C ${ROOT_TEMPLATE_DIR} . | tar xf - -C ${TARGET_ROOT_DIR}
+cd ${TARGET_ROOT_DIR}/lib
+for f in `find ${CROSS_LIBS_PATH} -maxdepth 1 -type f`
+do
+	cp -a ${f} .
+	file=`basename ${f}`
+	if (file -b ${file} | grep -v "ASCII" > /dev/null)
+	then
+		${CROSS_COMPILE}strip ${file}
+	fi
+done
+find ${CROSS_LIBS_PATH} -maxdepth 1 -type l -exec cp -a {} . \;
+cd - > /dev/null
+
+## Install busybox into the rootfs
+BUSYBOX_VERSION=1.29.3
+BUSYBOX_PATH=https://launchpad.net/busybox/main/${BUSYBOX_VERSION}/+download
+if [ ! -d busybox-${BUSYBOX_VERSION} ]
+then
+	# Download the busybox source
+	wget -c -P ${DOWNLOADS} ${BUSYBOX_PATH}/busybox-${BUSYBOX_VERSION}.tar.bz2
+	tar -xf ${DOWNLOADS}/busybox-${BUSYBOX_VERSION}.tar.bz2
+fi
+cd busybox-${BUSYBOX_VERSION}
+# Configure the busybox source
+make defconfig > /dev/null # cp ${BUSYBOX_CONFIG_DIR}/config.${BUSYBOX_VERSION}.default .config
+# Build the busybox source & Install
+ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} make CONFIG_PREFIX=${TARGET_ROOT_DIR} install
+cd - > /dev/null
+
+## Install dropbear into the rootfs
+DROPBEAR_VERSION=2015.68
+DROPBEAR_PATH=https://matt.ucc.asn.au/dropbear/releases
+if [ ! -d dropbear-${DROPBEAR_VERSION} ]
+then
+	# Download the dropbear source
+	wget -c -P ${DOWNLOADS} ${DROPBEAR_PATH}/dropbear-${DROPBEAR_VERSION}.tar.bz2
+	tar -xf ${DOWNLOADS}/dropbear-${DROPBEAR_VERSION}.tar.bz2
+fi
+cd dropbear-${DROPBEAR_VERSION}
+# Configure the dropbear source
+./configure --host=arm-linux-gnueabihf --prefix=/usr --disable-zlib
+# Build the dropbear source & Install
+make MULTI=1 PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" DESTDIR=${TARGET_ROOT_DIR} install
+cd - > /dev/null
+
+## rootfs -> ramdisk
+RD_IMAGE=rd-ext2.bin
+MOUNT_POINT=MountPt
+dd if=/dev/zero of=${RD_IMAGE} bs=1k count=16384
+/sbin/mke2fs -F -m 0 -b 1024 ${RD_IMAGE}
+mkdir ${MOUNT_POINT}
+sudo mount ${RD_IMAGE} ${MOUNT_POINT}
+tar cf - -C ${TARGET_ROOT_DIR} . | sudo tar xf - -C ${MOUNT_POINT} \
+	|| (sudo umount ${MOUNT_POINT} && rmdir ${MOUNT_POINT} && exit 1)
+sudo chown -R root.root ${MOUNT_POINT}
+sudo umount ${MOUNT_POINT}
+rmdir ${MOUNT_POINT}
+
+# Copy the ramdisk image
+cp ${RD_IMAGE} ${IMAGES}

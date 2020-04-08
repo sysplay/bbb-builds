@@ -12,17 +12,19 @@ else
 	echo "Usage: $0 [ -d ] <usd_device_file>"
 	exit 1
 fi
-USDPARTDEV=${USDDEV}p1
 
-if [ ! -b ${USDDEV} ]
+USDDEVTYPE=`lsblk -pl | grep "${USDDEV} " | awk '{print $6}'`
+if [ "${USDDEVTYPE}" != "disk" ]
 then
 	echo "Invalid uSD block device file ${USDDEV}"
 	exit 2
 fi
 
-if [ ! -b ${USDPARTDEV} ]
+USDPARTDEV=`lsblk -pl | grep "${USDDEV}" | tail -n +2 | head -1 | awk '{print $1}'`
+USDPARTDEVTYPE=`lsblk -pl | grep "${USDDEV}" | tail -n +2 | head -1 | awk '{print $6}'`
+if [ "${USDPARTDEVTYPE}" != "part" ]
 then
-	echo "uSD not having the first partition ${USDPARTDEV}. Create it."
+	echo "uSD not having the first partition. Create it."
 	exit 3
 fi
 
@@ -71,7 +73,7 @@ then
 	exit 9
 fi
 
-IMAGES="MLO u-boot.img uEnv.txt zImage am335x-boneblack.dtb"
+IMAGES="MLO u-boot.img uEnv.txt rd-ext2.bin zImage am335x-boneblack.dtb"
 
 cd ../Images
 if (! cp ${IMAGES} ${MNT} 2> /dev/null)
@@ -85,26 +87,11 @@ then
 fi
 cd - > /dev/null
 
-SCRIPTS="setup backup_bl erase_bl restore_bl"
-
-mkdir -p ${MNT}/Scripts
-if (! cp ${SCRIPTS} ${MNT}/Scripts 2> /dev/null)
-then
-	echo "Missing scripts to prepare the uSD"
-	cd ${MNT}/Scripts
-	rm -f ${SCRIPTS}
-	cd - > /dev/null
-	rmdir ${MNT}/Scripts
-	cd ${MNT}
-	rm -f ${IMAGES}
-	cd - > /dev/null
-	umount ${MNT}
-	exit 11
-fi
-
 if [ ${DUMP} -eq 0 ]
 then
 	umount ${MNT}
+	parted ${USDDEV} set 1 boot on 2> /dev/null # Make the first partition bootable
+	dd if=/dev/zero of=${USDDEV} bs=512 seek=1 count=2047 conv=notrunc 2> /dev/null
 	echo "uSD prepared successfully"
 else
 	rm ${MNT}/MLO # Remove it to stop interfering

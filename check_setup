@@ -1,0 +1,51 @@
+#!/bin/bash
+
+cd `dirname ${BASH_SOURCE}`
+
+export CONFIG=`pwd`/.config.sh
+export DOWNLOADS=`pwd`/Downloads
+export IMAGES=`pwd`/Images
+TOOLCHAIN_PATH_SCRIPT=`pwd`/Toolchain/arm_toolchain.sh
+
+cd - > /dev/null
+
+if [ ! -f ${TOOLCHAIN_PATH_SCRIPT} ]
+then
+	echo
+	echo "*** ARM Toolchain not (properly) installed ***"
+	echo
+	echo 'Run "make install_toolchain" in the top folder to install it'
+	echo
+	exit 1
+elif [ ! -f ${CONFIG} ]
+then
+	echo
+	echo "*** Build Configuration not set ***"
+	echo
+	echo 'Run "make generate_config" in the top folder before running this script'
+	echo
+	exit 2
+else
+	. ${CONFIG}
+
+	if (! which ${CROSS_COMPILE}gcc > /dev/null)
+	then
+		echo
+		echo "*** ARM Toolchain PATH not (properly) set ***"
+		echo
+		echo "Please logout and login back"
+		echo
+		exit 3
+	elif (! ${CROSS_COMPILE}gcc --version | head -1 | grep ${TOOLCHAIN_VERSION} > /dev/null)
+	then
+		echo
+		echo "*** ARM Toolchain Version incompatible ***"
+		echo
+		echo "Set the PATH of the toolchain w/ version ${TOOLCHAIN_VERSION} properly"
+		echo
+		exit 4
+	#else
+		# Do not exit 0, as it may be sourced also
+		#exit 0
+	fi
+fi
