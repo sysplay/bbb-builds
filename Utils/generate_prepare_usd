@@ -1,0 +1,107 @@
+#!/bin/bash -e
+
+cd `dirname ${BASH_SOURCE}`
+
+PKG_DIR=`pwd`/Pkg
+PKG_FILE=`pwd`/prepare_usd
+
+cat > ${PKG_FILE} <<"PKG_HDR"
+#!/bin/sh
+
+if [ $# -eq 2 ] && [ "$1" = "-d" ]
+then
+	DUMP=1
+	USDDEV="$2"
+elif [ $# -eq 1 ]
+then
+	DUMP=0
+	USDDEV="$1"
+else
+	echo "Usage: $0 [ -d ] <usd_device_file>"
+	exit 1
+fi
+
+USDDEVBASE=`basename ${USDDEV}`
+USDDEVTYPE=`lsblk -r | grep "${USDDEVBASE} " | cut -d\  -f6`
+if [ ! -b ${USDDEV} ] || [ "${USDDEVTYPE}" != "disk" ]
+then
+	echo "Invalid uSD block device file ${USDDEV}"
+	exit 2
+fi
+
+USDPARTDEVBASE=`lsblk -r | grep "${USDDEVBASE}" | grep " part " | head -1 | cut -d\  -f1`
+USDPARTDEVTYPE=`lsblk -r | grep "${USDDEVBASE}" | grep " part " | head -1 | cut -d\  -f6`
+if [ "${USDPARTDEVTYPE}" != "part" ]
+then
+	echo "uSD not having the first partition. Create it first."
+	exit 3
+fi
+USDPARTDEV=/dev/${USDPARTDEVBASE}
+
+if [ `id -u` != 0 ]
+then
+	echo "You need root privileges to run this script"
+	exit 4
+fi
+
+echo -n "You are going to lose your data in the uSD (${USDDEV}). Continue? [y|N]: "
+read resp
+if [ "${resp}" != "y" ]
+then
+	echo "Aborting ... done."
+	exit 5
+fi
+
+if (grep ${USDPARTDEV} /proc/self/mounts > /dev/null)
+then
+	if (! umount ${USDPARTDEV} 2> /dev/null)
+	then
+		echo "Unable to unmount uSD partition (${USDPARTDEV})"
+		exit 6
+	fi
+fi
+
+if (! mkfs.vfat -n BBBREC ${USDPARTDEV} 2> /dev/null >&2)
+then
+	echo "Unable to create FAT32 file system on the uSD partition (${USDPARTDEV})"
+	exit 7
+fi
+
+MNT=/mnt
+if (! mount ${USDPARTDEV} ${MNT} 2> /dev/null)
+then
+	echo "Unable to mount uSD partition (${USDPARTDEV})"
+	exit 8
+fi
+
+start_line_of_tgz=$((`grep -an "^TGZ_CONTENT$" $0 | cut -d: -f1` + 1))
+tail -n+${start_line_of_tgz} $0 | tar ozxf - -C ${MNT} 2> /dev/null
+
+if [ ${DUMP} -eq 0 ]
+then
+	umount ${MNT}
+	sfdisk -A1 ${USDDEV} 2> /dev/null # Make the first partition bootable
+	dd if=/dev/zero of=${USDDEV} bs=512 seek=1 count=2047 conv=notrunc 2> /dev/null
+	echo "uSD prepared successfully"
+else
+	cd ${MNT}
+	dd if=MLO of=${USDDEV} bs=512 seek=256 count=256 conv=notrunc 2> /dev/null
+	dd if=u-boot.img of=${USDDEV} bs=512 seek=768 count=1024 conv=notrunc 2> /dev/null
+	rm MLO u-boot.img # Remove MLO to stop interfering as it is first in lookup order
+	cd - > /dev/null
+	umount ${MNT}
+	echo "uSD w/ raw dump prepared successfully"
+fi
+exit 0
+TGZ_CONTENT
+PKG_HDR
+
+mkdir ${PKG_DIR}
+IMAGES="MLO u-boot.img uEnv.txt rd-ext2.bin am335x-boneblack.dtb zImage"
+cd ../Images
+cp ${IMAGES} ${PKG_DIR}
+cd - > /dev/null
+tar zcf - -C ${PKG_DIR} . >> ${PKG_FILE}
+rm -fr ${PKG_DIR}
+
+chmod +x ${PKG_FILE}

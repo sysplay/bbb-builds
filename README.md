@@ -14,6 +14,9 @@ Description of the various folders:
 
 Various make options:
 
++ Generate the Utils/prepare_usd script to prepare bootable uSD
+$ make generate_prepare_usd
+
 + Install Toolchain
 $ make install_toolchain
 

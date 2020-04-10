@@ -2,6 +2,7 @@ CONFIG_SCRIPT := .config.sh
 
 .PHONY: all clean
 .PHONY: install_libs install_pkgs
+.PHONY: generate_prepare_usd
 .PHONY: check_setup generate_config ${CONFIG_SCRIPT}
 
 all: build_uboot build_linux build_rootfs
@@ -23,6 +24,9 @@ build_linux: generate_config
 
 build_rootfs: generate_config
 	@RootFS/build_rootfs
+
+generate_prepare_usd:
+	@Utils/generate_prepare_usd
 
 check_setup:
 	@./check_setup
