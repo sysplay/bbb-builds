@@ -1,0 +1,56 @@
+#!/bin/bash -e
+
+cd `dirname ${BASH_SOURCE}`
+
+if [ $# -ne 1 ] || ( [ $1 != "x" ] && [ $1 != "X" ] && [ $1 != "c" ] && [ $1 != "C" ] )
+then
+	echo
+	echo "Usage: $0 <option>"
+	echo
+	echo "<option> could be any one of:"
+	echo "x: Extract only if not already extracted"
+	echo "X: Extract & Merge if already extracted"
+	echo "c: Create and Do Not Remove the template diirectory"
+	echo "C: Create and Remove the template diirectory"
+	echo
+	exit 1
+fi
+option=$1
+
+ROOT_TEMPLATE_DIR=`pwd`/RootTemplate
+ROOT_TEMPLATE=`pwd`/root_template.txz
+
+if [ ${option} = "x" ] || [ ${option} = "X" ]
+then
+	DONE=""
+	if [ -d  ${ROOT_TEMPLATE_DIR} ]
+	then
+		echo -n "Template directory already extracted. "
+		if [ ${option} = "x" ]
+		then
+			echo "You may create its tar using c."
+			exit 2
+		else
+			echo -n "Merging ... "
+			DONE="done.\n"
+		fi
+	fi
+	mkdir -p ${ROOT_TEMPLATE_DIR}
+	cd ${ROOT_TEMPLATE_DIR}
+	tar Jxf ${ROOT_TEMPLATE}
+	cd - > /dev/null
+	echo -ne ${DONE}
+else
+	if [ ! -d  ${ROOT_TEMPLATE_DIR} ]
+	then
+		echo "Missing template directory. First extract using x."
+		exit 3
+	fi
+	cd ${ROOT_TEMPLATE_DIR}
+	tar Jcf ${ROOT_TEMPLATE} *
+	cd - > /dev/null
+	if [ ${option} = "C" ]
+	then
+		rm -fr ${ROOT_TEMPLATE_DIR}
+	fi
+fi

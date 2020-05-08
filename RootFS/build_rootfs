@@ -6,7 +6,6 @@ cd `dirname ${BASH_SOURCE}`
 
 TARGET_ROOT_DIR=`pwd`/TargetRoot
 ROOT_TEMPLATE=`pwd`/root_template.txz
-#ROOT_TEMPLATE_DIR=`pwd`/RootTemplate
 CROSS_LIBS_PATH=`dirname $(which ${CROSS_COMPILE}gcc)`/../arm-linux-gnueabihf/libc/lib
 BUSYBOX_CONFIG_DIR=`pwd`/Configs
 
@@ -14,9 +13,6 @@ BUSYBOX_CONFIG_DIR=`pwd`/Configs
 sudo rm -fr ${TARGET_ROOT_DIR}
 mkdir ${TARGET_ROOT_DIR}
 tar xf ${ROOT_TEMPLATE} -C ${TARGET_ROOT_DIR}
-#mkdir ${ROOT_TEMPLATE_DIR}
-#tar xf ${ROOT_TEMPLATE} -C ${ROOT_TEMPLATE_DIR}
-#tar cf - -C ${ROOT_TEMPLATE_DIR} . | tar xf - -C ${TARGET_ROOT_DIR}
 cd ${TARGET_ROOT_DIR}/lib
 for f in `find ${CROSS_LIBS_PATH} -maxdepth 1 -type f`
 do

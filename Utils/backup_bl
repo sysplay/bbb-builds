@@ -22,4 +22,5 @@ then
 	echo "Backup successful."
 else
 	echo "Backup failed."
+	exit 1
 fi

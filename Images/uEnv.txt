@@ -1,11 +1,7 @@
 ramroot=/dev/ram0 rw ramdisk_size=16384 initrd=0x84000000,16M
-#mmcroot=/dev/mmcblk1p2 rw
 ramrootfstype=ext2
-#mmcrootfstype=ext4 rootwait
 ramboot=setenv bootargs console=ttyS0,115200n8 root=${ramroot} rootfstype=${ramrootfstype}
-#mmcboot=setenv bootargs console=ttyS0,115200n8 root=${mmcroot} rootfstype=${mmcrootfstype}
-loadrd=fatload mmc ${mmcdev}:1 0x84000000 rd-ext2.bin;
-loadzimage=fatload mmc ${mmcdev}:1 ${loadaddr} zImage;
-loadfdt=fatload mmc ${mmcdev}:1 ${fdtaddr} am335x-boneblack.dtb;
+loadrd=fatload mmc ${mmcdev}:${mmcpart} 0x84000000 rd-ext2.bin;
+loadzimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} zImage;
+loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdtaddr} am335x-boneblack.dtb;
 uenvcmd=run loadrd; run loadzimage; run loadfdt; run ramboot; bootz ${loadaddr} - ${fdtaddr};
-#uenvcmd=run loadrd; run loadzimage; run loadfdt; run mmcboot; bootz ${loadaddr} - ${fdtaddr};
