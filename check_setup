@@ -28,7 +28,7 @@ then
 else
 	. ${CONFIG}
 
-	if (! which ${CROSS_COMPILE}gcc > /dev/null)
+	if (! which ${CROSS_COMPILE}gcc &> /dev/null)
 	then
 		echo
 		echo "*** ARM Toolchain PATH not (properly) set ***"

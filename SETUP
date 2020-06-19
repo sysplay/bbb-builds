@@ -1,0 +1,62 @@
+BBB Connection Setup (One time)
+
++ Connect USB2TTL between (powered off) BBB and Linux System
+	> Refer to the following link of BBB's System Reference Manual for pin connection details
+		(https://github.com/beagleboard/beaglebone-black/wiki/System-Reference-Manual#serial-header)
+	> If VM, switch USB2TTL to VM
++ On Linux system (install the minicom package if not already there):
+	> sudo minicom -s and do the setup for baud 115200 bits, 8n1, hw & sw flow control off
+		. Save as dfl (default), and exit
+	> sudo minicom -o
++ Power on BBB to boot into Linux
++ Login into BBB as root
+	> uname -r # Verify your original kernel version
+	> poweroff
+
+---
+
+Preparing & Using (Live) Bootable / Recovery uSD (One time)
+
+*** WARNING ***
++ Following steps will erase all the contents of your uSD. So, ensure to take a backup
++ Be really careful in using the correct device file for your uSD. Check using "dmesg"
++ Otherwise, accidental erase of the contents of your hard disk may happen
+*** NOW YOU HAVE BEEN WARNED ***
+
++ Insert a uSD into the Linux System
++ On Linux system (inside this bbb-builds folder):
+	> make generate_prepare_usd
+	> Utils/prepare_usd [-d] <usd_device_file> # -d for raw dump of MLO & u-boot.img
++ Once successfully prepared, Take the uSD out & Insert the uSD into powered off BBB
++ Boot / Power On BBB w/ uSD. Once booted, check for "Welcome to SysPlay" message and the login prompt
+    > If not booted, try cold booting BBB w/ uSD w/ the black switch (above the BBB's uSD slot) pressed
+    > If still not booted, re-prepare the uSD w/ the prepare_usd script, but this time with the -d option
+		And, then retry booting BBB as per the above steps
+ + Login into BBB as root (w/ <Enter> as password)
+    > Check for "4.19" or latest kernel using uname -r
+
+---
+
+BBB Backup
+
++ Bootup & Login into BBB using the (Live) Bootable / Recovery uSD, as mentioned above
++ Type the command "backup_bl" # This should backup the bootloaders for future recovery. Check for its success.
+
+---
+
+BBB (Bootloaders) Erase for Baremetal Programming
+
++ Bootup & Login into BBB using the (Live) Bootable / Recovery uSD, as mentioned above
++ Type the command "erase_bl" # This should erase the bootloaders. Check for its success.
++ Once successful, type "reboot" to see "CCC..."
+
+---
+
+BBB Recovery (from "CCC..." to its original)
+
++ Bootup & Login into BBB using the (Live) Bootable / Recovery uSD, as mentioned above
++ Type the command "restore_bl" # This should restore the bootloaders from the backed up ones. Check for its success.
++ Once successful, type "poweroff
++ Cold reboot to boot BBB into its original
+ + Login into BBB as root
+	> Verify your original kernel version using uname -r
