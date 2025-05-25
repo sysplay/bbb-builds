@@ -1,0 +1,10 @@
++ Yocto Images (Change the version as needed)
+	. For old versions till 3.2.4: https://docs.yoctoproject.org/3.2.4/ref-manual/ref-images.html
+	. For latest ones: https://docs.yoctoproject.org/ref-manual/images.html
++ Some interesting images (from openembedded-core/meta/)
+	. core-image-base: A console-only image that fully supports the target device hardware
+	. core-image-full-cmdline: A console-only image with more full-featured Linux system functionality installed
+	. core-image-minimal: A small image just capable of allowing a device to boot
+	. core-image-minimal-dev: A core-image-minimal image suitable for development work using the host. The image includes headers and libraries you can use in a host development environment
++ How to strip images? https://stackoverflow.com/questions/56950063/how-can-i-strip-down-core-image-sato-and-remove-selected-apps-packages
++ Package Manager w/ Yocto: https://imxdev.gitlab.io/tutorial/How_to_apt-get_to_the_Yocto_Project_image/
