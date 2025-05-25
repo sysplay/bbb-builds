@@ -1,4 +1,4 @@
-ramroot=/dev/ram0 rw ramdisk_size=16384 initrd=0x84000000,16M
+ramroot=/dev/ram0 rw ramdisk_size=65536 initrd=0x84000000,64M
 ramrootfstype=ext2
 ramboot=setenv bootargs console=ttyS0,115200n8 root=${ramroot} rootfstype=${ramrootfstype}
 loadrd=fatload mmc ${mmcdev}:${mmcpart} 0x84000000 rd-ext2.bin;

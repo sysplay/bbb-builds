@@ -1,5 +1,20 @@
 #!/bin/bash -e
 
+if [ $# -gt 1 ] || ( [ $# -eq 1 ] && [ $1 != "d" ] && [ $1 != "c" ] && [ $1 != "b" ] )
+then
+	echo
+	echo "Usage: $0 [<option>]"
+	echo
+	echo "<option> could be any one of:"
+	echo "d: Download"
+	echo "c: Download & Configure"
+	echo "b: Download, Configure & Build"
+	echo "<none>: Download, Configure, Build & consolidate Images"
+	echo
+	exit 1
+fi
+option=$1
+
 cd `dirname ${BASH_SOURCE}`
 
 . ../check_setup
@@ -21,11 +36,17 @@ else
 	cd u-boot
 fi
 
+[ "${option}" = "d" ] && exit 0
+
 # Configure the u-boot source
 make ${UBOOT_DEFCONFIG}
 
+[ "${option}" = "c" ] && exit 0
+
 # Build the u-boot source
 CROSS_COMPILE=${CROSS_COMPILE} make
+
+[ "${option}" = "b" ] && exit 0
 
 # Copy the spl & u-boot images
 cp spl/u-boot-spl.bin MLO u-boot.bin u-boot.img ${IMAGES}

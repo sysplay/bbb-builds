@@ -1,5 +1,11 @@
 #!/bin/bash -e
 
+if [ $# -ne 0 ]
+then
+	echo "Usage: $0"
+	exit 1
+fi
+
 cd `dirname ${BASH_SOURCE}`
 
 . ../check_setup
@@ -7,6 +13,7 @@ cd `dirname ${BASH_SOURCE}`
 TARGET_ROOT_DIR=`pwd`/TargetRoot
 ROOT_TEMPLATE=`pwd`/root_template.txz
 CROSS_LIBS_PATH=`dirname $(which ${CROSS_COMPILE}gcc)`/../arm-linux-gnueabihf/libc/lib
+LINUX_BUILD_PATH=`pwd`/../OS/linux-${LINUX_VERSION}
 BUSYBOX_CONFIG_DIR=`pwd`/Configs
 
 ## Install minimal rootfs template
@@ -25,6 +32,10 @@ do
 done
 find ${CROSS_LIBS_PATH} -maxdepth 1 -type l -exec cp -a {} . \;
 cd - > /dev/null
+
+## Install the kernel modules into the rootfs
+ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} make -C ${LINUX_BUILD_PATH} modules_install INSTALL_MOD_PATH=${TARGET_ROOT_DIR}
+rm -f ${TARGET_ROOT_DIR}/lib/modules/${LINUX_VERSION}/{build,source}
 
 ## Install busybox into the rootfs
 BUSYBOX_VERSION=1.29.3
@@ -61,15 +72,28 @@ cd - > /dev/null
 ## rootfs -> ramdisk
 RD_IMAGE=rd-ext2.bin
 MOUNT_POINT=MountPt
-dd if=/dev/zero of=${RD_IMAGE} bs=1k count=16384
+TARGET_ROOT_SIZE=`du -sm ${TARGET_ROOT_DIR} | cut -d\	 -f1`
+RD_SIZE=`echo 2^$(($(bc -l <<< "l(${TARGET_ROOT_SIZE})/l(2)" | sed -e "s/\..*$//g") + 1)) | bc`
+dd if=/dev/zero of=${RD_IMAGE} bs=1M count=${RD_SIZE}
 /sbin/mke2fs -F -m 0 -b 1024 ${RD_IMAGE}
 mkdir ${MOUNT_POINT}
 sudo mount ${RD_IMAGE} ${MOUNT_POINT}
 tar cf - -C ${TARGET_ROOT_DIR} . | sudo tar xf - -C ${MOUNT_POINT} \
 	|| (sudo umount ${MOUNT_POINT} && rmdir ${MOUNT_POINT} && exit 1)
-sudo chown -R root.root ${MOUNT_POINT}
+sudo chown -R root:root ${MOUNT_POINT}
 sudo umount ${MOUNT_POINT}
 rmdir ${MOUNT_POINT}
 
-# Copy the ramdisk image
+# Copy the ramdisk image & Generate the uEnv.txt
 cp ${RD_IMAGE} ${IMAGES}
+cat > ${IMAGES}/uEnv.txt <<UET
+ramroot=/dev/ram0 rw ramdisk_size=$((${RD_SIZE} * 1024)) initrd=0x84000000,${RD_SIZE}M
+UET
+cat >> ${IMAGES}/uEnv.txt <<"UET"
+ramrootfstype=ext2
+ramboot=setenv bootargs console=ttyS0,115200n8 root=${ramroot} rootfstype=${ramrootfstype}
+loadrd=fatload mmc ${mmcdev}:${mmcpart} 0x84000000 rd-ext2.bin;
+loadzimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} zImage;
+loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdtaddr} am335x-boneblack.dtb;
+uenvcmd=run loadrd; run loadzimage; run loadfdt; run ramboot; bootz ${loadaddr} - ${fdtaddr};
+UET

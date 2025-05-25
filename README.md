@@ -20,20 +20,17 @@ $ make generate_prepare_usd
 + Install Toolchain
 $ make install_toolchain
 
-+ Install Dependent Libraries (Optional)
-$ make install_libs
-
 + Install Build Essentials (Optional)
 $ make install_pkgs
 
-+ Build u-boot
-$ make build_uboot
++ Build Uboot
+$ make uboot
 
 + Build Linux
-$ make build_linux
+$ make linux
 
 + Build Root FS
-$ make build_rootfs
+$ make rootfs
 
-+ Build u-boot, Linux, Root FS
++ Build Uboot, Linux, Root FS
 $ make

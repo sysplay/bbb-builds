@@ -1,5 +1,20 @@
 #!/bin/bash -e
 
+if [ $# -gt 1 ] || ( [ $# -eq 1 ] && [ $1 != "d" ] && [ $1 != "c" ] && [ $1 != "b" ] )
+then
+	echo
+	echo "Usage: $0 [<option>]"
+	echo
+	echo "<option> could be any one of:"
+	echo "d: Download"
+	echo "c: Download & Configure"
+	echo "b: Download, Configure & Build"
+	echo "<none>: Download, Configure, Build & consolidate Images"
+	echo
+	exit 1
+fi
+option=$1
+
 cd `dirname ${BASH_SOURCE}`
 
 . ../check_setup
@@ -15,12 +30,18 @@ fi
 
 cd linux-${LINUX_VERSION}
 
+[ "${option}" = "d" ] && exit 0
+
 # Configure the linux source
 cp ${LINUX_CONFIG_DIR}/config.${LINUX_VERSION}.default .config
 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} make oldconfig
 
+[ "${option}" = "c" ] && exit 0
+
 # Build the linux source
 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} make
+
+[ "${option}" = "b" ] && exit 0
 
 # Copy the dtb & linux images
 cp arch/arm/boot/dts/am335x-boneblack.dtb arch/arm/boot/zImage ${IMAGES}

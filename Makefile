@@ -1,28 +1,25 @@
 CONFIG_SCRIPT := .config.sh
 
 .PHONY: all clean
-.PHONY: install_libs install_pkgs
+.PHONY: install_pkgs
 .PHONY: generate_prepare_usd
 .PHONY: check_setup generate_config ${CONFIG_SCRIPT}
 
-all: build_uboot build_linux build_rootfs
+all: uboot linux rootfs
 
 install_toolchain: generate_config
 	@Toolchain/install_toolchain
 
-install_libs:
-	@Toolchain/install_libs
-
 install_pkgs:
 	@Toolchain/install_pkgs
 
-build_uboot: generate_config
+uboot: generate_config
 	@Bootloader/build_uboot
 
-build_linux: generate_config
+linux: generate_config
 	@OS/build_linux
 
-build_rootfs: generate_config
+rootfs: generate_config
 	@RootFS/build_rootfs
 
 generate_prepare_usd:

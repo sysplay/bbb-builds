@@ -1,0 +1,10 @@
+.config.sh
+Bootloader/u-boot/
+Downloads/
+OS/linux-*/
+RootFS/RootTemplate/
+RootFS/TargetRoot/
+RootFS/busybox-*/
+RootFS/dropbear-*/
+RootFS/rd-ext2.bin
+Utils/prepare_usd

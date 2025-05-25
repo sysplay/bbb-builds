@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Install build essentials
+# Install required packages
 if [ `lsb_release -si` == "Ubuntu" ]
 then
-	sudo apt-get install build-essential
+	sudo apt-get install build-essential libncurses5-dev flex bison lzop
 else # Assuming CentOS
-	sudo yum install gcc make
+	sudo yum install gcc make ncurses-devel flex bison lzop
 fi

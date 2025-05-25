@@ -26,7 +26,7 @@ Preparing & Using (Live) Bootable / Recovery uSD (One time)
 + Insert a uSD into the Linux System.
 + On Linux system (inside this bbb-builds folder):
 	> make generate_prepare_usd
-	> Utils/prepare_usd [-d] <usd_device_file> # -d for raw dump of MLO & u-boot.img
+	> Utils/prepare_usd [-d] <usd_device_file> # w/ root privileges # -d for raw dump of MLO & u-boot.img
 + Once successfully prepared, Take the uSD out & Insert the uSD into powered off BBB.
 + Boot / Power On BBB w/ uSD. Once booted, check for "Welcome to SysPlay" message and the login prompt.
     > If not booted, try cold booting BBB w/ uSD w/ the black switch (above the BBB's uSD slot) pressed
